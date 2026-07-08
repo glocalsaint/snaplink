@@ -1,5 +1,3 @@
-from collections.abc import AsyncGenerator
-
 import aiosqlite
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
@@ -13,14 +11,9 @@ router = APIRouter(prefix="/api")
 settings = Settings()
 
 
-async def _get_db() -> AsyncGenerator[aiosqlite.Connection, None]:
-    async for db in get_db(settings.db_path):
-        yield db
-
-
 @router.post("/links", response_model=LinkResponse, status_code=201)
 async def create_link(
-    body: LinkCreate, db: aiosqlite.Connection = Depends(_get_db)
+    body: LinkCreate, db: aiosqlite.Connection = Depends(get_db)
 ) -> LinkResponse:
     try:
         return await service.create_link(
@@ -33,13 +26,13 @@ async def create_link(
 
 
 @router.get("/links", response_model=list[LinkResponse])
-async def list_links(db: aiosqlite.Connection = Depends(_get_db)) -> list[LinkResponse]:
+async def list_links(db: aiosqlite.Connection = Depends(get_db)) -> list[LinkResponse]:
     return await service.list_links(db, settings.base_url)
 
 
 @router.delete("/links/{code}", status_code=204)
 async def delete_link(
-    code: str, db: aiosqlite.Connection = Depends(_get_db)
+    code: str, db: aiosqlite.Connection = Depends(get_db)
 ) -> Response:
     deleted = await service.delete_link(db, code)
     if not deleted:

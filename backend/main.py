@@ -1,4 +1,3 @@
-from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import aiosqlite
@@ -12,11 +11,6 @@ from backend.database import get_db, init_db
 from backend.router import router
 
 settings = Settings()
-
-
-async def get_db_dep() -> AsyncGenerator[aiosqlite.Connection, None]:
-    async for db in get_db(settings.db_path):
-        yield db
 
 
 @asynccontextmanager
@@ -43,7 +37,7 @@ async def root() -> FileResponse:
 
 @app.get("/r/{code}")
 async def redirect_link(
-    code: str, db: aiosqlite.Connection = Depends(get_db_dep)
+    code: str, db: aiosqlite.Connection = Depends(get_db)
 ) -> Response:
     link = await service.get_link(db, code)
     if link is None:
