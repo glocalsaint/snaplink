@@ -45,8 +45,12 @@ function renderTable(links) {
       <td><button class="delete-btn" data-code="${link.code}">Delete</button></td>
     `;
     tr.querySelector(".delete-btn").addEventListener("click", async () => {
-      await deleteLink(link.code);
-      await refreshTable();
+      try {
+        await deleteLink(link.code);
+        await refreshTable();
+      } catch (err) {
+        showResult(err.message, true);
+      }
     });
     tbody.appendChild(tr);
   });
