@@ -1,13 +1,22 @@
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+import aiosqlite
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from backend import service
 from backend.config import Settings
-from backend.database import init_db
+from backend.database import get_db, init_db
+from backend.router import router
 
 settings = Settings()
+
+
+async def get_db_dep() -> AsyncGenerator[aiosqlite.Connection, None]:
+    async for db in get_db(settings.db_path):
+        yield db
 
 
 @asynccontextmanager
@@ -19,6 +28,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="SnapLink", lifespan=lifespan)
 
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
+app.include_router(router)
 
 
 @app.get("/health")
@@ -29,3 +39,14 @@ async def health() -> dict:
 @app.get("/")
 async def root() -> FileResponse:
     return FileResponse("frontend/index.html")
+
+
+@app.get("/r/{code}")
+async def redirect_link(
+    code: str, db: aiosqlite.Connection = Depends(get_db_dep)
+) -> Response:
+    link = await service.get_link(db, code)
+    if link is None:
+        raise HTTPException(status_code=404, detail="Link not found")
+    await service.increment_visit(db, code)
+    return RedirectResponse(url=link.url, status_code=302)
