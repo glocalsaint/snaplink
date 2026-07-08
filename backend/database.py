@@ -2,6 +2,10 @@ from collections.abc import AsyncGenerator
 
 import aiosqlite
 
+from backend.config import Settings
+
+_settings = Settings()
+
 
 async def init_db(db_path: str) -> None:
     async with aiosqlite.connect(db_path) as db:
@@ -16,6 +20,6 @@ async def init_db(db_path: str) -> None:
         await db.commit()
 
 
-async def get_db(db_path: str = "snaplink.db") -> AsyncGenerator[aiosqlite.Connection, None]:
-    async with aiosqlite.connect(db_path) as db:
+async def get_db() -> AsyncGenerator[aiosqlite.Connection, None]:
+    async with aiosqlite.connect(_settings.db_path) as db:
         yield db
