@@ -51,20 +51,19 @@ async def create_link(
     )
 
 
-async def get_link(db: aiosqlite.Connection, code: str) -> LinkResponse | None:
+async def get_link(
+    db: aiosqlite.Connection, code: str, base_url: str = "http://localhost:8000"
+) -> LinkResponse | None:
     async with db.execute(
         "SELECT code, url, created_at, visit_count FROM links WHERE code = ?", (code,)
     ) as cursor:
         row = await cursor.fetchone()
     if row is None:
         return None
-    from backend.config import Settings
-
-    settings = Settings()
     return LinkResponse(
         code=row[0],
         url=row[1],
-        short_url=f"{settings.base_url}/r/{row[0]}",
+        short_url=f"{base_url}/r/{row[0]}",
         created_at=row[2],
         visit_count=row[3],
     )

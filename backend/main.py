@@ -39,7 +39,7 @@ async def root() -> FileResponse:
 async def redirect_link(
     code: str, db: aiosqlite.Connection = Depends(get_db)
 ) -> Response:
-    link = await service.get_link(db, code)
+    link = await service.get_link(db, code, settings.base_url)
     if link is None:
         raise HTTPException(status_code=404, detail="Link not found")
     await service.increment_visit(db, code)
